@@ -154,7 +154,7 @@ This is useful if you need the indexes to work across multiple dataframes (more 
 
 ``` r
 sub <- na.omit(airquality)
-head(airquality)
+head(sub)
 ```
 
     ##   Ozone Solar.R Wind Temp Month Day
@@ -162,8 +162,8 @@ head(airquality)
     ## 2    36     118  8.0   72     5   2
     ## 3    12     149 12.6   74     5   3
     ## 4    18     313 11.5   62     5   4
-    ## 5    NA      NA 14.3   56     5   5
-    ## 6    28      NA 14.9   66     5   6
+    ## 7    23     299  8.6   65     5   7
+    ## 8    19      99 13.8   59     5   8
 
 Finally, some functions will not automatically work if you have missing data. For example, look what happens when you try to fine the mean Ozone value across the dataset:
 
@@ -284,7 +284,7 @@ head(genofile)
     ## 5     0     0     0     0     0     0     0     0     0
     ## 6     0     0     0     0     0     0     0     0     0
 
-Here the first column is a sample ID. The rest of the columns are genotypes at diagnostic SNPs that distinguish between the two carp species in the paper. Values are 0, 1, or 2 and indicate the number of silver carp alleles at that SNP. So, for example, a 2 means that individual is homozygous for the silver carp allele while a 0 means that individual is homozygous for the bighead carp allele. Let's split the dataframe into the sample IDs and a frame with just the genotypes:
+Here the first column is a sample ID. The rest of the columns are genotypes at diagnostic SNPs that distinguish between the two carp species in the paper. Values are 0, 1, or 2 and indicate the number of bighead carp alleles at that SNP. So, for example, a 2 means that individual is homozygous for the bighead carp allele while a 0 means that individual is homozygous for the silver carp allele. Let's split the dataframe into the sample IDs and a frame with just the genotypes:
 
 ``` r
 IDs <- genofile[,1]
@@ -319,7 +319,7 @@ Notice that the metadata and the genotypes are *not* in the same order. We'll us
 ordermeta <- meta[match(IDs,meta$ID),]
 ```
 
-Now that the genotype and metadata are aligned, we can do lots of different calculations. Maybe we want to calculate the fraction of silver carp alleles for each individual. We can write a function for that:
+Now that the genotype and metadata are aligned, we can do lots of different calculations. Maybe we want to calculate the fraction of bighead carp alleles for each individual. We can write a function for that:
 
 ``` r
 allelefreq <- function(x) {
@@ -330,35 +330,35 @@ allelefreq <- function(x) {
 }
 ```
 
-The first line of the function calculates the length of the vector (the number of loci at which an individual is genotyped) - notice that we have omitted missing data. The second line simply adds the genotypes. We can do this because we know that hetorozygous individuals are coded as 1 and homozygous silver carp individuals are coded as 2. The third row calculates the frequency of silver carp alleles. Why do we have to multiple length by 2? Now we can apply that function to our genotype data:
+The first line of the function calculates the length of the vector (the number of loci at which an individual is genotyped) - notice that we have omitted missing data. The second line simply adds the genotypes. We can do this because we know that hetorozygous individuals are coded as 1 and homozygous bighead carp individuals are coded as 2. The third row calculates the frequency of bighead carp alleles. Why do we have to multiple length by 2? Now we can apply that function to our genotype data:
 
 ``` r
-silvAlleles <- apply(genos[,2:ncol(genos)],1,allelefreq)
-summary(silvAlleles)
+bigAlleles <- apply(genos,1,allelefreq)
+summary(bigAlleles)
 ```
 
     ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    ## 0.00000 0.00000 0.01786 0.31645 0.99010 1.00000
+    ## 0.00000 0.00000 0.01754 0.31639 0.99029 1.00000
 
 Now we can do things like look at the mean frequency across different species classes (how accurate were our field IDs) or rivers (which river has the most introduced alleles?):
 
 ``` r
-aggregate(silvAlleles,list(ordermeta$Field.ID),mean)
+aggregate(bigAlleles,list(ordermeta$Field.ID),mean)
 ```
 
     ##   Group.1          x
-    ## 1    BHCP 0.98368557
-    ## 2  Hybrid 0.76715273
-    ## 3    SVCP 0.02414646
-    ## 4    UNKN 0.28395949
+    ## 1    BHCP 0.98366800
+    ## 2  Hybrid 0.76778692
+    ## 3    SVCP 0.02400816
+    ## 4    UNKN 0.28485652
 
 ``` r
-a <- aggregate(silvAlleles,list(ordermeta$River),mean)
+a <- aggregate(bigAlleles,list(ordermeta$River),mean)
 ```
 
      
 
-### 4. Hybrid allele frequencies
+### 5. Making a PCA
 
 Now we want to make a PCA to visualize the similarity between individuals. We can do this with the `prcomp` function, but this function doesn't like missing data. There are some ways to deal with missing genotypes without having to discard them, but since we have a lot of data we will just remove individuals that have any missing data for now. We also have to subset the metadata to match:
 
